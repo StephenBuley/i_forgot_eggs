@@ -1,15 +1,22 @@
 class ListItem {
   int id;
-  bool completed = false;
-  String text = '';
+  bool completed;
+  String text;
 
-  ListItem({required this.id});
+  ListItem({
+    required this.id,
+    this.text = '',
+    this.completed = false,
+  });
 
+  @override
   String toString() {
-    return '''ListItem: {
-      id: $id,
-      completed: $completed,
-      text: $text
-    }''';
+    return '''
+{
+  id: $id,
+  completed: $completed,
+  text: $text
+}
+''';
   }
 }

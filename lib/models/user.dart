@@ -14,11 +14,14 @@ class User {
     required this.password,
   });
 
+  @override
   String toString() {
-    return '''User: {
-      id: $id, 
-      username: $username, 
-      lists: $lists
-    }''';
+    return '''
+{
+  id: $id, 
+  username: $username, 
+  lists: $lists
+}
+''';
   }
 }

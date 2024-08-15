@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:i_forgot_eggs/models/app_list.dart';
+import 'package:i_forgot_eggs/models/list_item.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +17,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'I Forgot Eggs'),
     );
   }
 }
@@ -26,43 +28,48 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class HomePageState extends State<MyHomePage> {
+  AppList list = AppList(id: 1, title: 'Grocery List');
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  @override
+  void initState() {
+    list.listItems.add(ListItem(id: 1, text: 'Eggs'));
+    list.listItems.add(ListItem(id: 2, text: 'Milk'));
+    list.listItems.add(ListItem(id: 3, text: 'Salsa'));
+
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: ReorderableListView(
+          buildDefaultDragHandles: false,
+          prototypeItem: CheckboxListTile(
+            value: false,
+            onChanged: (value) {},
+          ),
+          children: list.listItems.map(
+            (item) {
+              return CheckboxListTile(
+                key: ValueKey(item.id),
+                value: item.completed,
+                controlAffinity: ListTileControlAffinity.leading,
+                onChanged: (value) {
+                  setState(() {
+                    item.completed = value!;
+                  });
+                },
+                title: Text(item.text),
+              );
+            },
+          ).toList(),
+          onReorder: (oldIndex, newIndex) {},
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
