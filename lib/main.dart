@@ -62,46 +62,49 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('I Forgot Eggs'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.ios_share),
-          ),
-        ],
-      ),
-      body: PageView.builder(
-        itemCount: lists.length + 1, // +1 for the "add new list" page
-        itemBuilder: (context, index) {
-          if (index < lists.length) {
-            return AppListPage(
-              list: lists[index],
-              onListUpdated: (updatedlist) {
-                setState(() {
-                  lists[index] = updatedlist;
-                });
-              },
-            );
-          } else {
-            return Center(
-              child: ElevatedButton(
-                onPressed: () {
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('I Forgot Eggs'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          actions: [
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.ios_share),
+            ),
+          ],
+        ),
+        body: PageView.builder(
+          itemCount: lists.length + 1, // +1 for the "add new list" page
+          itemBuilder: (context, index) {
+            if (index < lists.length) {
+              return AppListPage(
+                list: lists[index],
+                onListUpdated: (updatedlist) {
                   setState(() {
-                    lists.add(AppList(
-                      id: 1,
-                      title: 'new list',
-                    ));
+                    lists[index] = updatedlist;
                   });
                 },
-                child: const Text('Add New List'),
-              ),
-            );
-          }
-        },
+              );
+            } else {
+              return Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      lists.add(AppList(
+                        id: 1,
+                        title: 'new list',
+                      ));
+                    });
+                  },
+                  child: const Text('Add New List'),
+                ),
+              );
+            }
+          },
+        ),
       ),
     );
   }
@@ -115,16 +118,44 @@ class AppListPage extends StatefulWidget {
       {super.key, required this.list, required this.onListUpdated});
 
   @override
-  State<AppListPage> createState() => _TodoListScreenState();
+  State<AppListPage> createState() => _AppListPageState();
 }
 
-class _TodoListScreenState extends State<AppListPage> {
+class _AppListPageState extends State<AppListPage> {
   late AppList list;
+  List<FocusNode> focusNodes = [];
 
   @override
   void initState() {
     super.initState();
     list = widget.list;
+    focusNodes = List.generate(list.listItems.length, (_) => FocusNode());
+  }
+
+  @override
+  void dispose() {
+    for (var node in focusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  void addItemAt(int index) {
+    setState(() {
+      // TODO: FIX THIS LATER
+      final newItem = ListItem(id: 4, text: '', completed: false);
+      list.listItems.insert(index + 1, newItem);
+      final newNode = FocusNode();
+      focusNodes.insert(index + 1, newNode);
+      widget.onListUpdated(list);
+
+      // Request focus on the new item
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (index + 1 < focusNodes.length) {
+          newNode.requestFocus(focusNodes[index + 1]);
+        }
+      });
+    });
   }
 
   @override
@@ -134,8 +165,15 @@ class _TodoListScreenState extends State<AppListPage> {
         child: ReorderableListView(
           header: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(
-              list.title,
+            child: TextFormField(
+              initialValue: list.title,
+              enableSuggestions: false,
+              onChanged: (value) {
+                setState(() {
+                  list.title = value;
+                  widget.onListUpdated(list);
+                });
+              },
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -145,29 +183,38 @@ class _TodoListScreenState extends State<AppListPage> {
             onChanged: (value) {},
             title: const Text("Sample Item"),
           ),
-          children: list.listItems.map((item) {
-            return CheckboxListTile(
-              key: ValueKey(item.id),
-              value: item.completed,
-              controlAffinity: ListTileControlAffinity.leading,
-              onChanged: (value) {
-                setState(() {
-                  item.completed = value ?? false;
-                  widget.onListUpdated(list);
-                });
-              },
-              title: TextFormField(
-                enableSuggestions: false,
-                initialValue: item.text,
-                onChanged: (value) {
-                  setState(() {
-                    item.text = value;
-                    widget.onListUpdated(list);
-                  });
-                },
-              ),
-            );
-          }).toList(),
+          children: list.listItems
+              .asMap()
+              .map((index, item) {
+                return MapEntry(
+                  index,
+                  CheckboxListTile(
+                    key: ValueKey(item),
+                    value: item.completed,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (value) {
+                      setState(() {
+                        item.completed = value ?? false;
+                        widget.onListUpdated(list);
+                      });
+                    },
+                    title: TextFormField(
+                      focusNode: focusNodes[index],
+                      enableSuggestions: false,
+                      initialValue: item.text,
+                      onChanged: (value) {
+                        setState(() {
+                          item.text = value;
+                          widget.onListUpdated(list);
+                        });
+                      },
+                      onFieldSubmitted: (_) => addItemAt(index),
+                    ),
+                  ),
+                );
+              })
+              .values
+              .toList(),
           onReorder: (oldIndex, newIndex) {
             setState(() {
               if (oldIndex < newIndex) {
