@@ -62,49 +62,46 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusTraversalGroup(
-      policy: OrderedTraversalPolicy(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('I Forgot Eggs'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          actions: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.ios_share),
-            ),
-          ],
-        ),
-        body: PageView.builder(
-          itemCount: lists.length + 1, // +1 for the "add new list" page
-          itemBuilder: (context, index) {
-            if (index < lists.length) {
-              return AppListPage(
-                list: lists[index],
-                onListUpdated: (updatedlist) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('I Forgot Eggs'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.ios_share),
+          ),
+        ],
+      ),
+      body: PageView.builder(
+        itemCount: lists.length + 1, // +1 for the "add new list" page
+        itemBuilder: (context, index) {
+          if (index < lists.length) {
+            return AppListPage(
+              list: lists[index],
+              onListUpdated: (updatedlist) {
+                setState(() {
+                  lists[index] = updatedlist;
+                });
+              },
+            );
+          } else {
+            return Center(
+              child: ElevatedButton(
+                onPressed: () {
                   setState(() {
-                    lists[index] = updatedlist;
+                    lists.add(AppList(
+                      id: 1,
+                      title: 'new list',
+                    ));
                   });
                 },
-              );
-            } else {
-              return Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      lists.add(AppList(
-                        id: 1,
-                        title: 'new list',
-                      ));
-                    });
-                  },
-                  child: const Text('Add New List'),
-                ),
-              );
-            }
-          },
-        ),
+                child: const Text('Add New List'),
+              ),
+            );
+          }
+        },
       ),
     );
   }
