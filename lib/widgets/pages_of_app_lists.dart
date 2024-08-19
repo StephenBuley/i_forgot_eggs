@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:i_forgot_eggs/models/app_list.dart';
-import 'package:i_forgot_eggs/models/list_item.dart';
 import 'package:i_forgot_eggs/widgets/app_list_page.dart';
 
 class PagesOfAppLists extends StatefulWidget {
@@ -17,11 +16,7 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
 
   @override
   void initState() {
-    final list = lists[0];
-    list.listItems.add(ListItem(id: 1, text: 'Eggs'));
-    list.listItems.add(ListItem(id: 2, text: 'Milk'));
-    list.listItems.add(ListItem(id: 3, text: 'Salsa'));
-
+    lists[0].addNewItem();
     super.initState();
   }
 

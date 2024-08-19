@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:i_forgot_eggs/models/app_list.dart';
-import 'package:i_forgot_eggs/models/list_item.dart';
 
 class AppListPage extends StatefulWidget {
   final AppList list;
@@ -15,37 +14,32 @@ class AppListPage extends StatefulWidget {
 
 class _AppListPageState extends State<AppListPage> {
   late AppList list;
-  List<FocusNode> focusNodes = [];
+  late List<FocusNode> focusNodes;
 
   @override
   void initState() {
     super.initState();
     list = widget.list;
-    focusNodes = List.generate(list.listItems.length, (_) => FocusNode());
+    focusNodes =
+        List.generate(widget.list.listItems.length, (_) => FocusNode());
   }
 
   @override
   void dispose() {
-    for (var node in focusNodes) {
+    for (final node in focusNodes) {
       node.dispose();
     }
     super.dispose();
   }
 
-  void addItemAt(int index) {
+  void addItemFrom(int index) {
     setState(() {
-      // TODO: FIX THIS LATER
-      final newItem = ListItem(id: 4, text: '', completed: false);
-      list.listItems.insert(index + 1, newItem);
+      list.addNewItem(nextIndex: index + 1);
       final newNode = FocusNode();
       focusNodes.insert(index + 1, newNode);
       widget.onListUpdated(list);
-
-      // Request focus on the new item
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (index + 1 < focusNodes.length) {
-          newNode.requestFocus(focusNodes[index + 1]);
-        }
+        FocusScope.of(context).requestFocus(newNode);
       });
     });
   }
@@ -70,41 +64,45 @@ class _AppListPageState extends State<AppListPage> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          prototypeItem: CheckboxListTile(
-            value: false,
-            onChanged: (value) {},
-            title: const Text("Sample Item"),
+          prototypeItem: ExcludeFocus(
+            child: CheckboxListTile(
+              value: false,
+              onChanged: (value) {},
+              title: const Text("Sample Item"),
+            ),
           ),
           children: list.listItems
               .asMap()
-              .map((index, item) {
-                return MapEntry(
-                  index,
-                  CheckboxListTile(
-                    key: ValueKey(item),
-                    value: item.completed,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    onChanged: (value) {
-                      setState(() {
-                        item.completed = value ?? false;
-                        widget.onListUpdated(list);
-                      });
-                    },
-                    title: TextFormField(
-                      focusNode: focusNodes[index],
-                      enableSuggestions: false,
-                      initialValue: item.text,
+              .map(
+                (index, item) {
+                  return MapEntry(
+                    index,
+                    CheckboxListTile(
+                      key: ValueKey(item.id),
+                      value: item.completed,
+                      controlAffinity: ListTileControlAffinity.leading,
                       onChanged: (value) {
                         setState(() {
-                          item.text = value;
+                          item.completed = value ?? false;
                           widget.onListUpdated(list);
                         });
                       },
-                      onFieldSubmitted: (_) => addItemAt(index),
+                      title: TextFormField(
+                        focusNode: focusNodes[index],
+                        enableSuggestions: false,
+                        initialValue: item.text,
+                        onChanged: (value) {
+                          setState(() {
+                            item.text = value;
+                            widget.onListUpdated(list);
+                          });
+                        },
+                        onFieldSubmitted: (_) => addItemFrom(index),
+                      ),
                     ),
-                  ),
-                );
-              })
+                  );
+                },
+              )
               .values
               .toList(),
           onReorder: (oldIndex, newIndex) {

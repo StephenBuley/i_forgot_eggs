@@ -4,6 +4,7 @@ class AppList {
   int id;
   String title;
   List<ListItem> listItems = [];
+  int nextItemId = 0;
 
   AppList({
     required this.id,
@@ -11,13 +12,18 @@ class AppList {
   });
 
   // this toggles the "completed" property for the given item id
-  toggleComplete(int itemId) {
+  void toggleComplete(int itemId) {
     final found = listItems.indexWhere(
       (element) => element.id == itemId,
     );
     if (found != -1) {
-      listItems[found].completed = !listItems[found].completed;
+      listItems[found].toggleComplete();
     }
+  }
+
+  void addNewItem({int? nextIndex}) {
+    final i = nextIndex ?? listItems.length;
+    listItems.insert(i, ListItem(id: nextItemId++));
   }
 
   @override

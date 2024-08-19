@@ -9,6 +9,10 @@ class ListItem {
     this.completed = false,
   });
 
+  void toggleComplete() {
+    completed = !completed;
+  }
+
   @override
   String toString() {
     return '''
