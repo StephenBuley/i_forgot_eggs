@@ -1,19 +1,14 @@
 {
-  "name": "i_forgot_eggs_backend",
-  "version": "1.0.0",
-  "main": "./dist/index.js",
-  "type": "module",
+  "name": "backend",
   "scripts": {
-    "dev": "nodemon ./dist/index.js",
-    "watch": "tsc -w"
+    "dev": "tsx watch src/index.ts"
   },
-  "keywords": [],
-  "author": "Stephen Buley",
-  "license": "ISC",
-  "description": "",
+  "dependencies": {
+    "@hono/node-server": "^1.12.1",
+    "hono": "^4.5.6"
+  },
   "devDependencies": {
-    "@types/node": "^22.4.1",
-    "nodemon": "^3.1.4",
-    "typescript": "^5.5.4"
+    "@types/node": "^20.11.17",
+    "tsx": "^4.7.1"
   }
 }
