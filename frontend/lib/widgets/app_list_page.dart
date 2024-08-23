@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:i_forgot_eggs/models/app_list.dart';
 
 class AppListPage extends StatefulWidget {
@@ -14,32 +15,60 @@ class AppListPage extends StatefulWidget {
 
 class _AppListPageState extends State<AppListPage> {
   late AppList list;
-  late List<FocusNode> focusNodes;
+  late List<FocusNode> textFocusNodes;
+  late List<FocusNode> keyFocusNodes;
 
   @override
   void initState() {
     super.initState();
     list = widget.list;
-    focusNodes =
+    textFocusNodes =
+        List.generate(widget.list.listItems.length, (_) => FocusNode());
+    keyFocusNodes =
         List.generate(widget.list.listItems.length, (_) => FocusNode());
   }
 
   @override
   void dispose() {
-    for (final node in focusNodes) {
+    for (final node in textFocusNodes) {
+      node.dispose();
+    }
+    for (final node in keyFocusNodes) {
       node.dispose();
     }
     super.dispose();
   }
 
+  bool theTimeIsRight(String value, KeyEvent event) {
+    // if backspace is pressed when the item is empty
+    return event.runtimeType == KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace &&
+        value.isEmpty;
+  }
+
   void addItemFrom(int index) {
     setState(() {
       list.addNewItem(nextIndex: index + 1);
-      final newNode = FocusNode();
-      focusNodes.insert(index + 1, newNode);
+      final newTextNode = FocusNode();
+      final newKeyNode = FocusNode();
+      textFocusNodes.insert(index + 1, newTextNode);
+      keyFocusNodes.insert(index + 1, newKeyNode);
       widget.onListUpdated(list);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        FocusScope.of(context).requestFocus(newNode);
+        FocusScope.of(context).requestFocus(newTextNode);
+      });
+    });
+  }
+
+  void removeItemFrom(int index) {
+    setState(() {
+      list.listItems.removeAt(index);
+      keyFocusNodes.removeAt(index);
+      textFocusNodes.removeAt(index);
+      widget.onListUpdated(list);
+      final prevNode = index == 0 ? null : textFocusNodes[index - 1];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(prevNode);
       });
     });
   }
@@ -52,6 +81,7 @@ class _AppListPageState extends State<AppListPage> {
           header: Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextFormField(
+              autofocus: true,
               initialValue: list.title,
               enableSuggestions: false,
               onChanged: (value) {
@@ -60,6 +90,7 @@ class _AppListPageState extends State<AppListPage> {
                   widget.onListUpdated(list);
                 });
               },
+              onFieldSubmitted: (_) => addItemFrom(-1),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -87,17 +118,24 @@ class _AppListPageState extends State<AppListPage> {
                           widget.onListUpdated(list);
                         });
                       },
-                      title: TextFormField(
-                        focusNode: focusNodes[index],
-                        enableSuggestions: false,
-                        initialValue: item.text,
-                        onChanged: (value) {
-                          setState(() {
-                            item.text = value;
-                            widget.onListUpdated(list);
-                          });
+                      title: KeyboardListener(
+                        focusNode: keyFocusNodes[index],
+                        onKeyEvent: (event) {
+                          if (!theTimeIsRight(item.text, event)) return;
+                          removeItemFrom(index);
                         },
-                        onFieldSubmitted: (_) => addItemFrom(index),
+                        child: TextFormField(
+                          focusNode: textFocusNodes[index],
+                          enableSuggestions: false,
+                          initialValue: item.text,
+                          onChanged: (value) {
+                            setState(() {
+                              item.text = value;
+                              widget.onListUpdated(list);
+                            });
+                          },
+                          onFieldSubmitted: (_) => addItemFrom(index),
+                        ),
                       ),
                     ),
                   );

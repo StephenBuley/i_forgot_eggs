@@ -14,6 +14,8 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
     AppList(id: 1, title: 'Grocery List'),
   ];
 
+  final PageController _pageController = PageController(viewportFraction: 0.9);
+
   @override
   void initState() {
     lists[0].addNewItem();
@@ -29,12 +31,15 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              print(_pageController.page);
+            },
             icon: const Icon(Icons.ios_share),
           ),
         ],
       ),
       body: PageView.builder(
+        controller: _pageController,
         itemCount: lists.length + 1, // +1 for the "add new list" page
         itemBuilder: (context, index) {
           if (index < lists.length) {
@@ -48,16 +53,26 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
             );
           } else {
             return Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    lists.add(AppList(
-                      id: 1,
-                      title: 'new list',
-                    ));
-                  });
-                },
-                child: const Text('Add New List'),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            lists.add(AppList(
+                              id: 1,
+                              title: '',
+                            ));
+                          });
+                        },
+                        child: const Text('Add New List'),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           }
