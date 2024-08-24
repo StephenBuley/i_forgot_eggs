@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:i_forgot_eggs/models/app_list.dart';
+import 'package:i_forgot_eggs/providers/list_provider.dart';
+import 'package:i_forgot_eggs/providers/lists_provider.dart';
 import 'package:i_forgot_eggs/widgets/app_list_page.dart';
+import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class PagesOfAppLists extends StatefulWidget {
@@ -11,20 +13,12 @@ class PagesOfAppLists extends StatefulWidget {
 }
 
 class _PagesOfAppListsState extends State<PagesOfAppLists> {
-  List<AppList> lists = [
-    AppList(id: 1, title: 'Grocery List'),
-  ];
-
   final PageController _pageController = PageController(viewportFraction: 0.9);
 
   @override
-  void initState() {
-    lists[0].addNewItem();
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final lists = context.watch<ListsProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('I Forgot Eggs'),
@@ -43,16 +37,16 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
         children: [
           PageView.builder(
             controller: _pageController,
-            itemCount: lists.length + 1, // +1 for the "add new list" page
+            itemCount: lists.numOfLists + 1, // +1 for the "add new list" page
             itemBuilder: (context, index) {
-              if (index < lists.length) {
-                return AppListPage(
-                  list: lists[index],
-                  onListUpdated: (updatedlist) {
-                    setState(() {
-                      lists[index] = updatedlist;
-                    });
-                  },
+              if (index < lists.numOfLists) {
+                final list = lists.getListAt(index);
+                return ChangeNotifierProvider(
+                  create: (context) => ListProvider(list: list),
+                  child: AppListPage(
+                    listId: list.id,
+                    listLength: list.listItems.length,
+                  ),
                 );
               } else {
                 return Center(
@@ -64,12 +58,7 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              setState(() {
-                                lists.add(AppList(
-                                  id: 1,
-                                  title: '',
-                                ));
-                              });
+                              lists.createNewList();
                             },
                             child: const Text('Add New List'),
                           ),
@@ -88,7 +77,7 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
             child: Center(
               child: SmoothPageIndicator(
                 controller: _pageController,
-                count: lists.length + 1,
+                count: lists.numOfLists + 1,
                 effect: ScrollingDotsEffect(
                   dotHeight: 8,
                   dotWidth: 8,

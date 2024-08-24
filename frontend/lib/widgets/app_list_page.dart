@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:i_forgot_eggs/models/app_list.dart';
+import 'package:i_forgot_eggs/providers/list_provider.dart';
+import 'package:provider/provider.dart';
 
 class AppListPage extends StatefulWidget {
-  final AppList list;
-  final Function(AppList) onListUpdated;
+  final int listId;
+  final int listLength;
 
-  const AppListPage(
-      {super.key, required this.list, required this.onListUpdated});
+  const AppListPage({
+    super.key,
+    required this.listId,
+    required this.listLength,
+  });
 
   @override
   State<AppListPage> createState() => _AppListPageState();
 }
 
 class _AppListPageState extends State<AppListPage> {
-  late AppList list;
+  late AppList listId;
   late List<FocusNode> textFocusNodes;
   late List<FocusNode> keyFocusNodes;
 
   @override
   void initState() {
     super.initState();
-    list = widget.list;
-    textFocusNodes =
-        List.generate(widget.list.listItems.length, (_) => FocusNode());
-    keyFocusNodes =
-        List.generate(widget.list.listItems.length, (_) => FocusNode());
+    textFocusNodes = _generateFocusNodes(widget.listLength);
+    keyFocusNodes = _generateFocusNodes(widget.listLength);
   }
 
   @override
@@ -39,6 +41,10 @@ class _AppListPageState extends State<AppListPage> {
     super.dispose();
   }
 
+  List<FocusNode> _generateFocusNodes(int length) {
+    return List.generate(length, (_) => FocusNode());
+  }
+
   bool theTimeIsRight(String value, KeyEvent event) {
     // if backspace is pressed when the item is empty
     return event.runtimeType == KeyDownEvent &&
@@ -46,26 +52,24 @@ class _AppListPageState extends State<AppListPage> {
         value.isEmpty;
   }
 
-  void addItemFrom(int index) {
+  void addItemFrom(ListProvider list, int index) {
     setState(() {
-      list.addNewItem(nextIndex: index + 1);
+      list.addItem(nextIndex: index + 1);
       final newTextNode = FocusNode();
       final newKeyNode = FocusNode();
       textFocusNodes.insert(index + 1, newTextNode);
       keyFocusNodes.insert(index + 1, newKeyNode);
-      widget.onListUpdated(list);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         FocusScope.of(context).requestFocus(newTextNode);
       });
     });
   }
 
-  void removeItemFrom(int index) {
+  void removeItemFrom(ListProvider list, int index) {
     setState(() {
-      list.listItems.removeAt(index);
+      list.removeItem(index: index);
       keyFocusNodes.removeAt(index);
       textFocusNodes.removeAt(index);
-      widget.onListUpdated(list);
       final prevNode = index == 0 ? null : textFocusNodes[index - 1];
       WidgetsBinding.instance.addPostFrameCallback((_) {
         FocusScope.of(context).requestFocus(prevNode);
@@ -75,6 +79,8 @@ class _AppListPageState extends State<AppListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final list = context.watch<ListProvider>();
+
     return Scaffold(
       body: Center(
         child: ReorderableListView(
@@ -85,12 +91,9 @@ class _AppListPageState extends State<AppListPage> {
               initialValue: list.title,
               enableSuggestions: false,
               onChanged: (value) {
-                setState(() {
-                  list.title = value;
-                  widget.onListUpdated(list);
-                });
+                list.title = value;
               },
-              onFieldSubmitted: (_) => addItemFrom(-1),
+              onFieldSubmitted: (_) => addItemFrom(list, -1),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -102,7 +105,7 @@ class _AppListPageState extends State<AppListPage> {
               title: const Text("Sample Item"),
             ),
           ),
-          children: list.listItems
+          children: list.items
               .asMap()
               .map(
                 (index, item) {
@@ -115,14 +118,13 @@ class _AppListPageState extends State<AppListPage> {
                       onChanged: (value) {
                         setState(() {
                           item.completed = value ?? false;
-                          widget.onListUpdated(list);
                         });
                       },
                       title: KeyboardListener(
                         focusNode: keyFocusNodes[index],
                         onKeyEvent: (event) {
                           if (!theTimeIsRight(item.text, event)) return;
-                          removeItemFrom(index);
+                          removeItemFrom(list, index);
                         },
                         child: TextFormField(
                           focusNode: textFocusNodes[index],
@@ -131,10 +133,9 @@ class _AppListPageState extends State<AppListPage> {
                           onChanged: (value) {
                             setState(() {
                               item.text = value;
-                              widget.onListUpdated(list);
                             });
                           },
-                          onFieldSubmitted: (_) => addItemFrom(index),
+                          onFieldSubmitted: (_) => addItemFrom(list, index),
                         ),
                       ),
                     ),
@@ -144,14 +145,7 @@ class _AppListPageState extends State<AppListPage> {
               .values
               .toList(),
           onReorder: (oldIndex, newIndex) {
-            setState(() {
-              if (oldIndex < newIndex) {
-                newIndex -= 1;
-              }
-              final movedItem = list.listItems.removeAt(oldIndex);
-              list.listItems.insert(newIndex, movedItem);
-              widget.onListUpdated(list);
-            });
+            list.moveItem(oldIndex: oldIndex, newIndex: newIndex);
           },
         ),
       ),
