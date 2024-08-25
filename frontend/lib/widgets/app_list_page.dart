@@ -52,7 +52,7 @@ class _AppListPageState extends State<AppListPage> {
         value.isEmpty;
   }
 
-  void addItemFrom(ListProvider list, int index) {
+  void addItemFrom(int index, ListProvider list) {
     setState(() {
       list.addItem(nextIndex: index + 1);
       final newTextNode = FocusNode();
@@ -65,7 +65,7 @@ class _AppListPageState extends State<AppListPage> {
     });
   }
 
-  void removeItemFrom(ListProvider list, int index) {
+  void removeItemFrom(int index, ListProvider list) {
     setState(() {
       list.removeItem(index: index);
       keyFocusNodes.removeAt(index);
@@ -93,7 +93,7 @@ class _AppListPageState extends State<AppListPage> {
               onChanged: (value) {
                 list.title = value;
               },
-              onFieldSubmitted: (_) => addItemFrom(list, -1),
+              onFieldSubmitted: (_) => addItemFrom(-1, list),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -111,31 +111,51 @@ class _AppListPageState extends State<AppListPage> {
                 (index, item) {
                   return MapEntry(
                     index,
-                    CheckboxListTile(
+                    Dismissible(
                       key: ValueKey(item.id),
-                      value: item.completed,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      onChanged: (value) {
-                        setState(() {
-                          item.completed = value ?? false;
-                        });
+                      direction: DismissDirection.endToStart,
+                      onDismissed: (direction) {
+                        removeItemFrom(index, list);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("${item.text} deleted"),
+                            duration: Durations.extralong1,
+                          ),
+                        );
                       },
-                      title: KeyboardListener(
-                        focusNode: keyFocusNodes[index],
-                        onKeyEvent: (event) {
-                          if (!theTimeIsRight(item.text, event)) return;
-                          removeItemFrom(list, index);
+                      background: Container(
+                        color: Theme.of(context).colorScheme.error,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      child: CheckboxListTile(
+                        key: ValueKey(item.id),
+                        value: item.completed,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: (value) {
+                          setState(() {
+                            item.completed = value ?? false;
+                          });
                         },
-                        child: TextFormField(
-                          focusNode: textFocusNodes[index],
-                          enableSuggestions: false,
-                          initialValue: item.text,
-                          onChanged: (value) {
-                            setState(() {
-                              item.text = value;
-                            });
+                        title: KeyboardListener(
+                          focusNode: keyFocusNodes[index],
+                          onKeyEvent: (event) {
+                            if (!theTimeIsRight(item.text, event)) return;
+                            removeItemFrom(index, list);
                           },
-                          onFieldSubmitted: (_) => addItemFrom(list, index),
+                          child: TextFormField(
+                            focusNode: textFocusNodes[index],
+                            enableSuggestions: false,
+                            initialValue: item.text,
+                            onChanged: (value) {
+                              setState(() {
+                                item.text = value;
+                              });
+                            },
+                            onFieldSubmitted: (_) => addItemFrom(index, list),
+                          ),
                         ),
                       ),
                     ),
