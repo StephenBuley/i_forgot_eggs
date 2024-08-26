@@ -157,9 +157,19 @@ class _AppListPageState extends State<AppListPage> {
               .values
               .toList(),
           onReorder: (oldIndex, newIndex) {
-            list.moveItem(oldIndex: oldIndex, newIndex: newIndex);
+            widget.provider.moveItem(oldIndex: oldIndex, newIndex: newIndex);
           },
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: widget.provider.currentList == widget.list
+            ? () {
+                addItemFrom(widget.list.listItems.length - 1, widget.provider);
+              }
+            : null, // disable if this can't do anything
+        tooltip: 'Add Item',
+        mini: true,
+        child: const Icon(Icons.add),
       ),
     );
   }
