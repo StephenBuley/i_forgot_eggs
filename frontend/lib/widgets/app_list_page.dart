@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:i_forgot_eggs/models/app_list.dart';
-import 'package:i_forgot_eggs/providers/list_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:i_forgot_eggs/providers/lists_provider.dart';
 
 class AppListPage extends StatefulWidget {
-  final int listId;
-  final int listLength;
+  final AppList list;
+  final ListsProvider provider;
 
   const AppListPage({
     super.key,
-    required this.listId,
-    required this.listLength,
+    required this.list,
+    required this.provider,
   });
 
   @override
@@ -19,15 +18,14 @@ class AppListPage extends StatefulWidget {
 }
 
 class _AppListPageState extends State<AppListPage> {
-  late AppList listId;
   late List<FocusNode> textFocusNodes;
   late List<FocusNode> keyFocusNodes;
 
   @override
   void initState() {
     super.initState();
-    textFocusNodes = _generateFocusNodes(widget.listLength);
-    keyFocusNodes = _generateFocusNodes(widget.listLength);
+    textFocusNodes = _generateFocusNodes(widget.list.listItems.length);
+    keyFocusNodes = _generateFocusNodes(widget.list.listItems.length);
   }
 
   @override
@@ -52,9 +50,9 @@ class _AppListPageState extends State<AppListPage> {
         value.isEmpty;
   }
 
-  void addItemFrom(int index, ListProvider list) {
+  void addItemFrom(int index, ListsProvider provider) {
     setState(() {
-      list.addItem(nextIndex: index + 1);
+      provider.addItem(nextIndex: index + 1);
       final newTextNode = FocusNode();
       final newKeyNode = FocusNode();
       textFocusNodes.insert(index + 1, newTextNode);
@@ -65,9 +63,9 @@ class _AppListPageState extends State<AppListPage> {
     });
   }
 
-  void removeItemFrom(int index, ListProvider list) {
+  void removeItemFrom(int index, ListsProvider provider) {
     setState(() {
-      list.removeItem(index: index);
+      provider.removeItem(index: index);
       keyFocusNodes.removeAt(index);
       textFocusNodes.removeAt(index);
       final prevNode = index == 0 ? null : textFocusNodes[index - 1];
@@ -79,8 +77,6 @@ class _AppListPageState extends State<AppListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final list = context.watch<ListProvider>();
-
     return Scaffold(
       body: Center(
         child: ReorderableListView(
@@ -88,12 +84,12 @@ class _AppListPageState extends State<AppListPage> {
             padding: const EdgeInsets.all(8.0),
             child: TextFormField(
               autofocus: true,
-              initialValue: list.title,
+              initialValue: widget.list.title,
               enableSuggestions: false,
               onChanged: (value) {
-                list.title = value;
+                widget.provider.setTitle(value);
               },
-              onFieldSubmitted: (_) => addItemFrom(-1, list),
+              onFieldSubmitted: (_) => addItemFrom(-1, widget.provider),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -105,7 +101,7 @@ class _AppListPageState extends State<AppListPage> {
               title: const Text("Sample Item"),
             ),
           ),
-          children: list.items
+          children: widget.list.listItems
               .asMap()
               .map(
                 (index, item) {
@@ -115,8 +111,7 @@ class _AppListPageState extends State<AppListPage> {
                       key: ValueKey(item.id),
                       direction: DismissDirection.endToStart,
                       onDismissed: (direction) {
-                        removeItemFrom(index, list);
-
+                        removeItemFrom(index, widget.provider);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("${item.text} deleted"),
@@ -134,27 +129,24 @@ class _AppListPageState extends State<AppListPage> {
                         key: ValueKey(item.id),
                         value: item.completed,
                         controlAffinity: ListTileControlAffinity.leading,
-                        onChanged: (value) {
-                          setState(() {
-                            item.completed = value ?? false;
-                          });
+                        onChanged: (_) {
+                          widget.provider.toggleComplete(index);
                         },
                         title: KeyboardListener(
                           focusNode: keyFocusNodes[index],
                           onKeyEvent: (event) {
                             if (!theTimeIsRight(item.text, event)) return;
-                            removeItemFrom(index, list);
+                            removeItemFrom(index, widget.provider);
                           },
                           child: TextFormField(
                             focusNode: textFocusNodes[index],
                             enableSuggestions: false,
                             initialValue: item.text,
                             onChanged: (value) {
-                              setState(() {
-                                item.text = value;
-                              });
+                              widget.provider.setItemText(index, value);
                             },
-                            onFieldSubmitted: (_) => addItemFrom(index, list),
+                            onFieldSubmitted: (_) =>
+                                addItemFrom(index, widget.provider),
                           ),
                         ),
                       ),
