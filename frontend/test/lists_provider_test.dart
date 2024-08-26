@@ -145,6 +145,12 @@ void main() {
       expect(items.length, 2);
       expect(items.first.text, 'my second item');
       expect(items.last.text, 'my item text');
+
+      provider.moveItem(oldIndex: 1, newIndex: 0);
+      final itemsAgain = provider.getItems();
+      expect(itemsAgain.length, 2);
+      expect(itemsAgain.first.text, 'my item text');
+      expect(itemsAgain.last.text, 'my second item');
     });
   });
 }
