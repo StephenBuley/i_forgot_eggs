@@ -9,7 +9,8 @@ void main() {
       final listsBefore = provider.lists;
 
       expect(listsBefore, []);
-      AppList createdList = provider.createNewList();
+      provider.createNewList();
+      final createdList = provider.lists[0];
       expect(createdList.id, 1);
       expect(createdList.title, '');
       expect(createdList.listItems, []);
