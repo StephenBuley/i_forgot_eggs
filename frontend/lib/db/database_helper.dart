@@ -19,7 +19,7 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final databasesPath = await getDatabasesPath();
-    final path = join(databasesPath, 'app_lists.db');
+    final path = join(databasesPath, 'i_forgot_eggs.db');
 
     return await openDatabase(
       path,
@@ -49,12 +49,14 @@ class DatabaseHelper {
 
   Future<int> insertAppList(AppList appList) async {
     final db = await database;
-    return await db.insert('appLists', appList.toMap());
+    return await db.insert('appLists', appList.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<int> insertListItem(ListItem listItem) async {
     final db = await database;
-    return await db.insert('listItems', listItem.toMap());
+    return await db.insert('listItems', listItem.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<AppList>> getAppLists() async {
@@ -93,5 +95,10 @@ class DatabaseHelper {
   Future<int> deleteListItem(int id) async {
     final db = await database;
     return await db.delete('listItems', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future close() async {
+    final db = await database;
+    db.close();
   }
 }

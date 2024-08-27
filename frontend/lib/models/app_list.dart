@@ -1,14 +1,14 @@
 import 'package:i_forgot_eggs/models/list_item.dart';
 
 class AppList {
-  int id;
+  int? id;
   String title;
-  List<ListItem> listItems = [];
-  int nextItemId = 0;
+  List<ListItem> listItems;
 
   AppList({
-    required this.id,
-    required this.title,
+    this.id,
+    required this.listItems,
+    this.title = '',
   });
 
   // this toggles the "completed" property for the given item id
@@ -21,9 +21,9 @@ class AppList {
     }
   }
 
-  void addNewItem({int? nextIndex}) {
+  void addNewItem({int? nextIndex, required ListItem item}) {
     final i = nextIndex ?? listItems.length;
-    listItems.insert(i, ListItem(id: nextItemId++));
+    listItems.insert(i, item);
   }
 
   @override
@@ -35,5 +35,20 @@ class AppList {
   listItems: $listItems,
 }
 ''';
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+    };
+  }
+
+  factory AppList.fromMap(Map<String, dynamic> map, List<ListItem> items) {
+    return AppList(
+      id: map['id'],
+      title: map['title'],
+      listItems: items,
+    );
   }
 }

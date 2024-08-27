@@ -1,10 +1,12 @@
 class ListItem {
-  int id;
+  int? id;
   bool completed;
   String text;
+  int appListId;
 
   ListItem({
-    required this.id,
+    required this.appListId,
+    this.id,
     this.text = '',
     this.completed = false,
   });
@@ -22,5 +24,23 @@ class ListItem {
   text: $text
 }
 ''';
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'appListId': appListId,
+      'text': text,
+      'completed': completed ? 1 : 0,
+    };
+  }
+
+  factory ListItem.fromMap(Map<String, dynamic> map) {
+    return ListItem(
+      id: map['id'],
+      appListId: map['appListId'],
+      text: map['text'],
+      completed: map['completed'] == 1,
+    );
   }
 }

@@ -1,12 +1,26 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
+import 'package:i_forgot_eggs/db/database_helper.dart';
 import 'package:i_forgot_eggs/models/app_list.dart';
 import 'package:i_forgot_eggs/models/list_item.dart';
 
 class ListsProvider extends ChangeNotifier {
-  final List<AppList> _lists = [];
+  List<AppList> _lists = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   AppList? _currentList;
   int? _currentListIndex;
+
+  ListsProvider() {
+    _loadAppLists();
+  }
+
+  Future<void> _loadAppLists() async {
+    _lists = await _dbHelper.getAppLists();
+    if (numOfLists > 0) {
+      currentListIndex = 0;
+    }
+    notifyListeners();
+  }
 
   UnmodifiableListView<AppList> get lists => UnmodifiableListView(_lists);
 
@@ -36,8 +50,9 @@ class ListsProvider extends ChangeNotifier {
     return _currentList?.title ?? '';
   }
 
-  void setTitle(String newTitle) {
+  Future<void> setTitle(String newTitle) async {
     _currentList!.title = newTitle.trim();
+    await _dbHelper.updateAppList(_currentList!);
     notifyListeners();
   }
 
@@ -54,26 +69,34 @@ class ListsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addItem({required int nextIndex}) {
-    _currentList!.addNewItem(nextIndex: nextIndex);
+  Future<void> addItem({required int nextIndex}) async {
+    final listId = _currentList!.id!;
+    final newItem = ListItem(appListId: listId);
+    final id = await _dbHelper.insertListItem(newItem);
+    final item = ListItem(appListId: listId, id: id);
+    _currentList!.addNewItem(nextIndex: nextIndex, item: item);
     notifyListeners();
   }
 
   void removeItem({required int index}) {
-    _currentList!.listItems.removeAt(index);
+    final items = _currentList!.listItems;
+    _dbHelper.deleteListItem(items[index].id!);
+    items.removeAt(index);
     notifyListeners();
   }
 
-  AppList createNewList() {
-    final newList = AppList(id: 1, title: '');
-    _lists.add(newList);
+  Future<void> createNewList() async {
+    final newList = AppList(listItems: []);
+    final id = await _dbHelper.insertAppList(newList);
+    final newListWithId = AppList(id: id, listItems: []);
+    _lists.add(newListWithId);
     currentListIndex = numOfLists - 1;
     notifyListeners();
-    return newList;
   }
 
-  void removeList() {
+  Future<void> removeList() async {
     _lists.removeAt(currentListIndex!);
+    await _dbHelper.deleteAppList(currentList!.id!);
     if (currentListIndex == numOfLists) {
       currentListIndex = null;
     } else {
@@ -83,13 +106,68 @@ class ListsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleComplete(int index) {
-    _currentList!.listItems[index].toggleComplete();
+  Future<void> toggleComplete(int index) async {
+    final item = _currentList!.listItems[index];
+    item.toggleComplete();
+    await _dbHelper.updateListItem(item);
     notifyListeners();
   }
 
-  void setItemText(int index, String newText) {
-    _currentList!.listItems[index].text = newText.trim();
+  Future<void> setItemText(int index, String newText) async {
+    final item = _currentList!.listItems[index];
+    item.text = newText.trim();
+    await _dbHelper.updateListItem(item);
     notifyListeners();
   }
+
+  // Future<void> updateAppList(AppList appList) async {
+  //   await _dbHelper.updateAppList(appList);
+  //   int index = _lists.indexWhere((list) => list.id == appList.id);
+  //   if (index != -1) {
+  //     _lists[index] = appList;
+  //     notifyListeners();
+  //   }
+  // }
+
+  // Future<void> deleteAppList(int id) async {
+  //   await _dbHelper.deleteAppList(id);
+  //   _lists.removeWhere((list) => list.id == id);
+  //   notifyListeners();
+  // }
+
+  // Future<void> addListItem(int appListId, ListItem listItem) async {
+  //   int id = await _dbHelper.insertListItem(listItem);
+  //   int index = _lists.indexWhere((list) => list.id == appListId);
+  //   if (index != -1) {
+  //     _lists[index].listItems.add(ListItem(
+  //         id: id,
+  //         appListId: appListId,
+  //         text: listItem.text,
+  //         completed: listItem.completed));
+  //     notifyListeners();
+  //   }
+  // }
+
+  // Future<void> updateListItem(ListItem listItem) async {
+  //   await _dbHelper.updateListItem(listItem);
+  //   int listIndex = _lists.indexWhere((list) => list.id == listItem.appListId);
+  //   if (listIndex != -1) {
+  //     int itemIndex = _lists[listIndex]
+  //         .listItems
+  //         .indexWhere((item) => item.id == listItem.id);
+  //     if (itemIndex != -1) {
+  //       _lists[listIndex].listItems[itemIndex] = listItem;
+  //       notifyListeners();
+  //     }
+  //   }
+  // }
+
+  // Future<void> deleteListItem(int appListId, int listItemId) async {
+  //   await _dbHelper.deleteListItem(listItemId);
+  //   int listIndex = _lists.indexWhere((list) => list.id == appListId);
+  //   if (listIndex != -1) {
+  //     _lists[listIndex].listItems.removeWhere((item) => item.id == listItemId);
+  //     notifyListeners();
+  //   }
+  // }
 }

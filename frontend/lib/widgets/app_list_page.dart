@@ -50,9 +50,9 @@ class _AppListPageState extends State<AppListPage> {
         value.isEmpty;
   }
 
-  void addItemFrom(int index, ListsProvider provider) {
+  void addItemFrom(int index, ListsProvider provider) async {
+    await provider.addItem(nextIndex: index + 1);
     setState(() {
-      provider.addItem(nextIndex: index + 1);
       final newTextNode = FocusNode();
       final newKeyNode = FocusNode();
       textFocusNodes.insert(index + 1, newTextNode);
@@ -68,10 +68,10 @@ class _AppListPageState extends State<AppListPage> {
       provider.removeItem(index: index);
       keyFocusNodes.removeAt(index);
       textFocusNodes.removeAt(index);
-      final prevNode = index == 0 ? null : textFocusNodes[index - 1];
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        FocusScope.of(context).requestFocus(prevNode);
-      });
+    });
+    final prevNode = index == 0 ? null : textFocusNodes[index - 1];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(prevNode);
     });
   }
 
@@ -166,7 +166,7 @@ class _AppListPageState extends State<AppListPage> {
             ? () {
                 addItemFrom(widget.list.listItems.length - 1, widget.provider);
               }
-            : null, // disable if this can't do anything
+            : null,
         tooltip: 'Add Item',
         mini: true,
         child: const Icon(Icons.add),
