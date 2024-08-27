@@ -46,7 +46,8 @@ class _AppListPageState extends State<AppListPage> {
   bool theTimeIsRight(String value, KeyEvent event) {
     // if backspace is pressed when the item is empty
     return event.runtimeType == KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.backspace &&
+        (event.logicalKey == LogicalKeyboardKey.backspace ||
+            event.logicalKey == LogicalKeyboardKey.delete) &&
         value.isEmpty;
   }
 
