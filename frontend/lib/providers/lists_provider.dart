@@ -31,8 +31,7 @@ class ListsProvider extends ChangeNotifier {
   int? get currentListIndex => _currentListIndex;
 
   set currentListIndex(int? index) {
-    if (index == null) return;
-    if (index >= numOfLists) {
+    if (index == null || index >= numOfLists) {
       // we are on the add new list page, currentList is null
       _currentList = null;
       _currentListIndex = null;
@@ -106,6 +105,15 @@ class ListsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> clearList() async {
+    List<ListItem> items = _currentList!.listItems;
+    _currentList!.listItems = [];
+    for (ListItem item in items) {
+      await _dbHelper.deleteListItem(item.id!);
+    }
+    notifyListeners();
+  }
+
   Future<void> toggleComplete(int index) async {
     final item = _currentList!.listItems[index];
     item.toggleComplete();
@@ -120,54 +128,11 @@ class ListsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Future<void> updateAppList(AppList appList) async {
-  //   await _dbHelper.updateAppList(appList);
-  //   int index = _lists.indexWhere((list) => list.id == appList.id);
-  //   if (index != -1) {
-  //     _lists[index] = appList;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // Future<void> deleteAppList(int id) async {
-  //   await _dbHelper.deleteAppList(id);
-  //   _lists.removeWhere((list) => list.id == id);
-  //   notifyListeners();
-  // }
-
-  // Future<void> addListItem(int appListId, ListItem listItem) async {
-  //   int id = await _dbHelper.insertListItem(listItem);
-  //   int index = _lists.indexWhere((list) => list.id == appListId);
-  //   if (index != -1) {
-  //     _lists[index].listItems.add(ListItem(
-  //         id: id,
-  //         appListId: appListId,
-  //         text: listItem.text,
-  //         completed: listItem.completed));
-  //     notifyListeners();
-  //   }
-  // }
-
-  // Future<void> updateListItem(ListItem listItem) async {
-  //   await _dbHelper.updateListItem(listItem);
-  //   int listIndex = _lists.indexWhere((list) => list.id == listItem.appListId);
-  //   if (listIndex != -1) {
-  //     int itemIndex = _lists[listIndex]
-  //         .listItems
-  //         .indexWhere((item) => item.id == listItem.id);
-  //     if (itemIndex != -1) {
-  //       _lists[listIndex].listItems[itemIndex] = listItem;
-  //       notifyListeners();
-  //     }
-  //   }
-  // }
-
-  // Future<void> deleteListItem(int appListId, int listItemId) async {
-  //   await _dbHelper.deleteListItem(listItemId);
-  //   int listIndex = _lists.indexWhere((list) => list.id == appListId);
-  //   if (listIndex != -1) {
-  //     _lists[listIndex].listItems.removeWhere((item) => item.id == listItemId);
-  //     notifyListeners();
-  //   }
-  // }
+  String getFormattedListItems() {
+    List<String> itemTexts = [];
+    for (ListItem item in currentList!.listItems) {
+      itemTexts.add('- ${item.text}');
+    }
+    return itemTexts.join('\n');
+  }
 }

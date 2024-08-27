@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:i_forgot_eggs/providers/lists_provider.dart';
 import 'package:i_forgot_eggs/widgets/app_list_page.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class PagesOfAppLists extends StatefulWidget {
@@ -18,15 +19,17 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
   Widget build(BuildContext context) {
     final lists = context.watch<ListsProvider>();
 
-    void showDeleteConfirmationDialog(BuildContext context, int? index) {
+    void showConfirmationDialog(
+        String action, BuildContext context, int? index) {
       if (index != null && lists.currentList != null) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Delete List'),
-              content: const Text(
-                  'Are you sure you want to delete the entire list?'),
+              title: Text(
+                  '${action.substring(0, 1).toUpperCase() + action.substring(1)} List'),
+              content:
+                  Text('Are you sure you want to $action the entire list?'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -36,10 +39,16 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
                 ),
                 TextButton(
                   onPressed: () {
-                    lists.removeList();
+                    action == 'delete'
+                        ? lists.removeList()
+                        : action == 'clear'
+                            ? lists.clearList()
+                            : null;
                     Navigator.of(context).pop(); // Close the dialog
                   },
-                  child: const Text('Delete'),
+                  child: Text(
+                    action.substring(0, 1).toUpperCase() + action.substring(1),
+                  ),
                 ),
               ],
             );
@@ -73,17 +82,20 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
         actions: [
           IconButton(
             onPressed: () {
-              print(_pageController.page);
+              if (lists.currentList != null) {
+                Share.share(lists.getFormattedListItems());
+              }
             },
             tooltip: 'Share',
             icon: const Icon(Icons.ios_share),
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'delete') {
-                showDeleteConfirmationDialog(
-                    context, (_pageController.page?.round()));
-              }
+              showConfirmationDialog(
+                value,
+                context,
+                _pageController.page?.round(),
+              );
             },
             itemBuilder: (BuildContext context) {
               return [
@@ -91,6 +103,10 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
                   value: 'delete',
                   child: Text('Delete List'),
                 ),
+                const PopupMenuItem(
+                  value: 'clear',
+                  child: Text('Clear List'),
+                )
               ];
             },
             tooltip: 'Options',
