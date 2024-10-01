@@ -141,6 +141,9 @@ class _AppListPageState extends State<AppListPage> {
                           },
                           child: TextFormField(
                             focusNode: textFocusNodes[index],
+                            onTapOutside: (event) {
+                              textFocusNodes[index].unfocus();
+                            },
                             enableSuggestions: false,
                             initialValue: item.text,
                             onChanged: (value) {
