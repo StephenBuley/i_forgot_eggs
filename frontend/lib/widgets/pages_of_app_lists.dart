@@ -58,7 +58,7 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
     }
 
     List<AppListPage> generateAppListPages() {
-      return lists.lists
+      List<AppListPage> pages = lists.lists
           .asMap()
           .map(
             (index, list) => MapEntry(
@@ -72,98 +72,103 @@ class _PagesOfAppListsState extends State<PagesOfAppLists> {
           )
           .values
           .toList();
+      return pages;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('I Forgot Eggs'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        actions: [
-          IconButton(
-            onPressed: () {
-              if (lists.currentList != null) {
-                Share.share(lists.getFormattedListItems());
-              }
-            },
-            tooltip: 'Share',
-            icon: const Icon(Icons.ios_share),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              showConfirmationDialog(
-                value,
-                context,
-                _pageController.page?.round(),
-              );
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Text('Delete List'),
-                ),
-                const PopupMenuItem(
-                  value: 'clear',
-                  child: Text('Clear List'),
-                )
-              ];
-            },
-            tooltip: 'Options',
-            icon: const Icon(Icons.more_vert), // This is the breadcrumb icon
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          PageView(
-            onPageChanged: (value) {
-              lists.currentListIndex = value;
-            },
-            controller: _pageController,
-            children: [
-              ...generateAppListPages(),
-              Center(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            lists.createNewList();
-                            lists.currentListIndex =
-                                _pageController.page!.round();
-                          },
-                          child: const Text('Add New List'),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('I Forgot Eggs'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          actions: [
+            IconButton(
+              onPressed: () {
+                if (lists.currentList != null) {
+                  Share.share(lists.getFormattedListItems());
+                }
+              },
+              tooltip: 'Share',
+              icon: const Icon(Icons.ios_share),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                showConfirmationDialog(
+                  value,
+                  context,
+                  _pageController.page?.round(),
+                );
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Delete List'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'clear',
+                    child: Text('Clear List'),
+                  )
+                ];
+              },
+              tooltip: 'Options',
+              icon: const Icon(Icons.more_vert), // This is the breadcrumb icon
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            PageView(
+              onPageChanged: (value) {
+                lists.currentListIndex = value;
+              },
+              controller: _pageController,
+              children: [
+                ...generateAppListPages(),
+                Center(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: lists.currentList == null
+                                ? () {
+                                    lists.createNewList();
+                                    lists.currentListIndex =
+                                        _pageController.page!.round();
+                                  }
+                                : () {},
+                            child: const Text('Add New List'),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              )
-            ],
-          ),
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SmoothPageIndicator(
-                controller: _pageController,
-                count: lists.numOfLists + 1,
-                effect: ScrollingDotsEffect(
-                  dotHeight: 8,
-                  dotWidth: 8,
-                  spacing: 8,
-                  activeDotColor: Theme.of(context).colorScheme.primary,
-                  maxVisibleDots: 7,
+                    ],
+                  ),
+                )
+              ],
+            ),
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SmoothPageIndicator(
+                  controller: _pageController,
+                  count: lists.numOfLists + 1,
+                  effect: ScrollingDotsEffect(
+                    dotHeight: 8,
+                    dotWidth: 8,
+                    spacing: 8,
+                    activeDotColor: Theme.of(context).colorScheme.primary,
+                    maxVisibleDots: 7,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

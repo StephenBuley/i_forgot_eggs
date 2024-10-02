@@ -20,6 +20,7 @@ class AppListPage extends StatefulWidget {
 class _AppListPageState extends State<AppListPage> {
   late List<FocusNode> textFocusNodes;
   late List<FocusNode> keyFocusNodes;
+  final FocusNode titleFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -84,8 +85,12 @@ class _AppListPageState extends State<AppListPage> {
           header: Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextFormField(
-              autofocus: true,
+              autofocus: widget.list == widget.provider.currentList,
+              focusNode: titleFocusNode,
               initialValue: widget.list.title,
+              onTapOutside: (event) {
+                titleFocusNode.unfocus();
+              },
               enableSuggestions: false,
               onChanged: (value) {
                 widget.provider.setTitle(value);
